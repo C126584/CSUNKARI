@@ -22,12 +22,14 @@ CLASS ycl_unused_contact_delete DEFINITION
     METHODS get_zcp_partners
       RETURNING VALUE(rt_partners) TYPE ty_partners.
 
-    "! Returns contact persons that exist in V_CVI_CUST_CT_LI.
+    "! Returns ZCP partners that exist as contact persons in V_CVI_CUST_CT_LI.
     METHODS get_cust_contact_persons
+      IMPORTING it_zcp_partners    TYPE ty_partners
       RETURNING VALUE(rt_partners) TYPE ty_partners.
 
-    "! Returns contact persons that exist in V_CVI_VEND_CT_LI.
+    "! Returns ZCP partners that exist as contact persons in V_CVI_VEND_CT_LI.
     METHODS get_vend_contact_persons
+      IMPORTING it_zcp_partners    TYPE ty_partners
       RETURNING VALUE(rt_partners) TYPE ty_partners.
 
     "! Submits the unused partners to BUPA_TEST_DELETE for mass deletion.
@@ -47,8 +49,8 @@ CLASS ycl_unused_contact_delete IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA(lt_cust_contacts) = get_cust_contact_persons( ).
-    DATA(lt_vend_contacts) = get_vend_contact_persons( ).
+    DATA(lt_cust_contacts) = get_cust_contact_persons( it_zcp_partners = lt_zcp_partners ).
+    DATA(lt_vend_contacts) = get_vend_contact_persons( it_zcp_partners = lt_zcp_partners ).
 
     " Merge both sets of used contact persons into a single sorted lookup table
     DATA lt_used_contacts TYPE ty_partners.
@@ -85,16 +87,22 @@ CLASS ycl_unused_contact_delete IMPLEMENTATION.
 
 
   METHOD get_cust_contact_persons.
+    CHECK it_zcp_partners IS NOT INITIAL.
     SELECT contactperson
       FROM v_cvi_cust_ct_li
-      INTO TABLE @rt_partners.
+      INTO TABLE @rt_partners
+      FOR ALL ENTRIES IN @it_zcp_partners
+      WHERE contactperson = @it_zcp_partners-table_line.
   ENDMETHOD.
 
 
   METHOD get_vend_contact_persons.
+    CHECK it_zcp_partners IS NOT INITIAL.
     SELECT contactperson
       FROM v_cvi_vend_ct_li
-      INTO TABLE @rt_partners.
+      INTO TABLE @rt_partners
+      FOR ALL ENTRIES IN @it_zcp_partners
+      WHERE contactperson = @it_zcp_partners-table_line.
   ENDMETHOD.
 
 
